@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from .serializers import *
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view,permission_classes
 
 def get_tokens_for_user(user):
   refresh = RefreshToken.for_user(user)
@@ -14,52 +15,105 @@ def get_tokens_for_user(user):
       'access': str(refresh.access_token),
   }
 
+
+class RegisterView(APIView):
+    def post(self,request):
+        serializer = RegisterSerializer(data =request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'msg': 'Registration Successful'}, status=status.HTTP_201_CREATED)
+
+
 class LoginView(APIView):
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            user = serializer.validated_data['user']
-            token = get_tokens_for_user(user)
-            return Response({
+    def post(self,request):
+        serializer = LoginSerializer(data =request.data,context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token = get_tokens_for_user(user)
+        return Response({
                 'token': token,
-                
-            }, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+                }, status=status.HTTP_200_OK)
+
+
+class CurrentUserView(APIView):
+    permission_classes = (IsAuthenticated,)
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            email = request.user.email
+            return Response({'email': email})
+        else:
+            return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+        
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
+    def post(self,request):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response({"detail": "Refresh token is required."}, status=status.HTTP_400_BAD_REQUEST)
-
         try:
+            print(request.data['access'])
+            request.access.delete()
+            
             token = RefreshToken(refresh_token)
             token.blacklist()
-
             return Response(status=status.HTTP_205_RESET_CONTENT)
         except Exception as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class RegisterView(APIView):
-    def post(self,request):
-        serializer = RegisterSerializer(data = request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        token = get_tokens_for_user(user)
-        return Response({'token':token, 'msg':'Registration Successful'}, status=status.HTTP_201_CREATED)
 
-    
-class ChangePasswordViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated]
-    @action(detail=False, methods=['get','post'], url_path='change')
-    def change_password(self, request):
-        serializer = ChangePasswordSerializer(data=request.data, context={'user': request.user})
+class ChangePasswordView(APIView):
+    permission_classes = (IsAuthenticated,)
+    def post(self,request):
+        serializer = ChangePasswordSerializer(data=request.data,context = {'request':request})
         if serializer.is_valid():
             serializer.save()
-            return Response({'msg': 'Password Changed Successfully'}, status=status.HTTP_200_OK)
+            return Response({"status": "password set"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def change_password(request):
+#     if request.method=='POST':
+#         serializer = ChangePasswordSerializer(data=request.data,context = {'request':request})
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({"status": "password set"}, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def change_password(request):
+#     if request.method == 'POST':
+#         serializer = ChangePasswordSerializer(data=request.data)
+#         if serializer.is_valid():
+#             user = request.user
+#             if user.check_password(serializer.data.get('old_password')):
+#                 user.set_password(serializer.data.get('new_password'))
+#                 user.save()
+#                 # update_session_auth_hash(request, user)  # To update session after password change
+#                 return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
+#             return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+
+
+
+
+
+
+
     
     
 class UserViewSet(viewsets.ModelViewSet):
@@ -108,3 +162,7 @@ class UserProfileView(APIView):
             return Response(serializer.data)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    

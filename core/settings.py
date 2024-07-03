@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'user',
 ]
 
+
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny'
@@ -115,7 +117,7 @@ DATABASES = {
     
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'movie_db',
+        'NAME': 'movie',
         'USER': 'admin',
         'PASSWORD': '123',
         'HOST':'localhost',
