@@ -186,7 +186,7 @@ class Movie(models.Model):
     RATING_TYPE = (('g','G'),('pg','PG'),('pg-13','PG-13'),('r','R'))
     title = models.CharField(max_length=100,null=False)
     release_date = models.DateField(null=False,default='1980-01-01')
-    end_point = models.CharField(max_length=300, null=False,default='')
+    end_point = models.CharField(max_length=300,null=True,blank=True)
     runtime = models.IntegerField(null=False,default=0)
     movie_url = models.FileField(upload_to='documents/')
     synopsis = models.TextField(null=True,blank=True)
