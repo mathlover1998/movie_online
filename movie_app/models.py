@@ -75,7 +75,7 @@ class User(AbstractBaseUser):
     
     
     class Meta:
-        managed = False
+        # managed = False
         db_table = "users"
         verbose_name = "User"
         verbose_name_plural = "Users"
@@ -111,6 +111,32 @@ class PhoneNumberValidators(models.CharField):
         if not value.isdigit() and not value.startswith('+'):
             raise ValidationError('Phone number must only contain digits and optional + sign')
 
+def extract_username(email):
+    # Find the position of '@' symbol
+    at_index = email.find('@')
+    
+    # Extract the substring before '@'
+    if at_index != -1:
+        username = email[:at_index]
+    else:
+        # Handle case where '@' is not found (though normally in email it should be present)
+        username = email  # Entire email address is returned
+    
+    return username
+
+def generate_short_uuid():
+    # Generate a UUID
+    generated_uuid = uuid.uuid4()
+
+    # Convert UUID to a hexadecimal string without dashes
+    uuid_hex = generated_uuid.hex
+
+    # Take the first 6 characters from the hex string
+    short_uuid = uuid_hex[:6]
+
+    return short_uuid
+
+
 class Profile(models.Model):
     user = models.OneToOneField(User, models.CASCADE,related_name='profile')
     phone_number = PhoneNumberValidators(blank=True)
@@ -118,6 +144,18 @@ class Profile(models.Model):
     first_name = models.CharField(max_length=255,null=False,default='')
     last_name = models.CharField(max_length=255,null=False,default='')
     display_name = models.CharField(max_length=255,null=False)
+
+    @property
+    def full_name(self):
+        return f"{self.first_name} {self.last_name}"
+
+    def generate_display_name(self):
+        return extract_username(self.user.email) + generate_short_uuid()
+    
+    def save(self,*args, **kwargs):
+        if not self.display_name:
+            self.display_name = self.generate_display_name()
+        super(Profile, self).save(*args, **kwargs)
 
     class Meta:
         managed = False
@@ -160,9 +198,10 @@ class Movie(models.Model):
     
     def generate_unique_endpoint(self):
         return f"{to_kebab_case(self.title)}-{uuid.uuid4()}"
-    def save(self):
+    def save(self,*args,**kwargs):
         if not self.end_point:
             self.end_point = self.generate_unique_endpoint()
+        super(Movie, self).save(*args, **kwargs)
     class Meta:
         managed = False
         db_table = 'movies'

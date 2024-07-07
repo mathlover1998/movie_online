@@ -7,6 +7,8 @@ from rest_framework.decorators import action
 from .serializers import *
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view,permission_classes
+import random
+from django.core.cache import cache
 
 def get_tokens_for_user(user):
   refresh = RefreshToken.for_user(user)
@@ -34,15 +36,6 @@ class LoginView(APIView):
                 'token': token,
                 }, status=status.HTTP_200_OK)
 
-
-class CurrentUserView(APIView):
-    permission_classes = (IsAuthenticated,)
-    def get(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            email = request.user.email
-            return Response({'email': email})
-        else:
-            return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
         
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -64,7 +57,7 @@ class LogoutView(APIView):
 class ChangePasswordView(APIView):
     permission_classes = (IsAuthenticated,)
     def post(self,request):
-        serializer = ChangePasswordSerializer(data=request.data,context = {'request':request})
+        serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response({"status": "password set"}, status=status.HTTP_200_OK)
@@ -82,87 +75,78 @@ class ChangePasswordView(APIView):
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request,display_name=None):
+        # profile= None
+        if display_name:
+            profile = get_object_or_404(Profile,display_name=display_name)
+        else:
+            profile = request.user.profile
+        serializer = ProfileSerializer(profile)
+        return Response(serializer.data)
+    def put(self,request,display_name=None):
+        if display_name and display_name != request.user.profile.display_name:
+            return Response({"detail": "You do not have permission to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+        profile = request.user.profile
+        serializer = ProfileSerializer(instance=profile,data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-
-
-
-
-# @api_view(['POST'])
+# @api_view(['GET','POST'])
 # @permission_classes([IsAuthenticated])
-# def change_password(request):
-#     if request.method == 'POST':
-#         serializer = ChangePasswordSerializer(data=request.data)
-#         if serializer.is_valid():
-#             user = request.user
-#             if user.check_password(serializer.data.get('old_password')):
-#                 user.set_password(serializer.data.get('new_password'))
-#                 user.save()
-#                 # update_session_auth_hash(request, user)  # To update session after password change
-#                 return Response({'message': 'Password changed successfully.'}, status=status.HTTP_200_OK)
-#             return Response({'error': 'Incorrect old password.'}, status=status.HTTP_400_BAD_REQUEST)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+# def update_phone_number(request):
+#     if request.method=='GET':
+#         serializer = PhoneNumberSerializer(instance=request.user.profile, context = {'request':request})
+#         return Response(serializer.data)
+#     if request.method =='POST':
+#         serializer = PhoneNumberSerializer(data=request.data,context = {'request':request})
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response({"status": "phone changed"}, status=status.HTTP_200_OK)
 
 
-
-
-
-
-
-
-
-
-
+class PhoneNumberChangeView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        profile = request.user.profile
+        phone_number = profile.phone_number
+        return Response({"phone_number": phone_number})
+    def post(self,request):
+        serializer = PhoneNumberSerializer(data=request.data)
+        if serializer.is_valid():
+            new_phone = serializer.validated_data['new_phone_number']
+            otp = str(random.randint(100000, 999999))
+            print(otp)
+            cache.set(f'{request.user.id}_new_phone_number', new_phone, timeout=300)
+            cache.set(f'{request.user.id}_otp',otp,timeout=300)
+            return Response({"message": "OTP sent to new phone number"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
-class UserViewSet(viewsets.ModelViewSet):
-    serializer_class = UserSerializer
-    def get_queryset(self):
-        return User.objects.filter(id=self.request.user.id)
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-    
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
-
-class UserProfileView(APIView):
+class OTPVerificationView(APIView):
     permission_classes = [IsAuthenticated]
     def get(self,request):
-        user = get_object_or_404(User, id=request.user.id)
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
-    
-    def patch(self, request):
-        user = get_object_or_404(User, id=request.user.id)
-        serializer = UserSerializer(user, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            user_image, created = UserImage.objects.get_or_create(user=user)
-            user_image_serializer = UserImageSerializer(user_image, data=request.data.get('user_image', {}), partial=True)
-            if user_image_serializer.is_valid():
-                user_image_serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-    def put(self, request):
-        user = get_object_or_404(User, id=request.user.id)
-        serializer = UserSerializer(user, data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            user_image, created = UserImage.objects.get_or_create(user=user)
-            user_image_serializer = UserImageSerializer(user_image, data=request.data.get('user_image', {}), partial=True)
-            if user_image_serializer.is_valid():
-                user_image_serializer.save()
-            return Response(serializer.data)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        otp = cache.get(f'{request.user.id}_otp')
+        cached_phone_number = cache.get(f'{request.user.id}_new_phone_number')
+        return Response({"message": f'{otp}-{cached_phone_number}'},status=status.HTTP_200_OK)
+    def post(self,request):
+        serializer = OTPVerificationSerializer(data=request.data)
+        if serializer.is_valid():
+            new_phone_number = serializer.validated_data['new_phone_number']
+            otp = serializer.validated_data['otp']
+            cached_otp = cache.get(f'{request.user.id}_otp')
+            cached_phone_number = cache.get(f'{request.user.id}_new_phone_number')
+            if cached_phone_number == new_phone_number:
+                if cached_otp == otp:
+                    profile = request.user.profile
+                    profile.phone_number = new_phone_number
+                    profile.save()
+                    # Clear cache data
+                    cache.delete(f'{request.user.id}_new_phone_number')
+                    cache.delete(f'{request.user.id}_otp')
+                    return Response(ProfileSerializer(profile).data, status=status.HTTP_200_OK)
+                return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid new phone number"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-    
