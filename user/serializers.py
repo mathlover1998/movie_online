@@ -41,8 +41,6 @@ class LoginSerializer(serializers.ModelSerializer):
         if all(attrs.values()):
             user = authenticate(request=self.context.get('request'),email=attrs['email'],password =attrs['password'])
             if user:
-                if not user.is_active:
-                    raise serializers.ValidationError("User is disabled")
                 attrs['user'] = user
             else:
                 raise serializers.ValidationError("Unable to log in with provided credentials.")

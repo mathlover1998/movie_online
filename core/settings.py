@@ -121,11 +121,21 @@ DATABASES = {
         'USER': 'admin',
         'PASSWORD': '123',
         'HOST':'localhost',
-        'PORT':'5432' 
-    }
+        'PORT':'5432',
+        
+    },
+    'test': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'movie_test',
+        'USER': 'admin',
+        'PASSWORD': '123',
+        'HOST':'localhost',
+        'PORT':'5432',
+        
+    },
     
 }
-
+# DATABASES['default'] = DATABASES['test']
 
 # DATABASES = {
 #     'default': {

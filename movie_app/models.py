@@ -42,6 +42,7 @@ class User(AbstractBaseUser):
         verbose_name="email address",
         max_length=255,
         unique=True,
+        
     )
     password = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
@@ -75,7 +76,7 @@ class User(AbstractBaseUser):
     
     
     class Meta:
-        # managed = False
+        managed = True
         db_table = "users"
         verbose_name = "User"
         verbose_name_plural = "Users"
@@ -97,7 +98,7 @@ class UserImage(models.Model):
         return static("images/default/default_avatar.png")
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'user_images'
         verbose_name_plural = "User Images"
 
@@ -158,7 +159,7 @@ class Profile(models.Model):
         super(Profile, self).save(*args, **kwargs)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'profiles'
         verbose_name_plural = "Profiles"
 
@@ -173,7 +174,7 @@ class Address(models.Model):
 
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'addresses'
         verbose_name_plural = "Addresses"
 
@@ -203,7 +204,7 @@ class Movie(models.Model):
             self.end_point = self.generate_unique_endpoint()
         super(Movie, self).save(*args, **kwargs)
     class Meta:
-        managed = False
+        managed = True
         db_table = 'movies'
         verbose_name_plural = "Movies"
 
@@ -223,7 +224,7 @@ class MovieImage(models.Model):
         return self.movie.title
     
     class Meta:
-        managed = False
+        managed = True
         db_table = 'movie_images'
         verbose_name_plural = "Movie Images"
 
@@ -233,7 +234,7 @@ class Genre(models.Model):
     name = models.CharField(choices=GENRE_TYPE,default='drama',null=False)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'genres'
         verbose_name_plural = "Genres"
 
@@ -245,7 +246,7 @@ class Cast(models.Model):
     ranking = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'casts'
         verbose_name_plural = "Casts"
 
@@ -257,7 +258,7 @@ class MovieCast(models.Model):
     def __str__(self) -> str:
         return f'{self.movie.title} - {self.cast.name}'
     class Meta:
-        managed = False
+        managed = True
         db_table = 'movie_cast'
         verbose_name_plural = "Movie Casts"
         # unique_together = ('movie','cast')
@@ -273,7 +274,7 @@ class Review(models.Model):
     def __str__(self) -> str:
         return self.user.profile.display_name
     class Meta:
-        managed = False
+        managed = True
         db_table = 'reviews'
         verbose_name_plural = "Reviews"
 
@@ -283,7 +284,7 @@ class Watchlist(models.Model):
     movie = models.ForeignKey(Movie, models.CASCADE,related_name='watchlists')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'watchlists'
         verbose_name_plural = "Watch Lists"
 
@@ -295,7 +296,7 @@ class MovieGenre(models.Model):
     genres = models.ForeignKey(Genre, models.CASCADE)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'movie_genres'
         unique_together = ('movie', 'genres')
         verbose_name_plural = "Movie Genres"
