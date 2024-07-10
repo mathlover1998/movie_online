@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'movie_app',
     'user',
+    'django_elasticsearch_dsl'
 ]
 
 
@@ -122,27 +123,35 @@ DATABASES = {
         'PASSWORD': '123',
         'HOST':'localhost',
         'PORT':'5432',
-        
-    },
-    'test': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'movie_test',
-        'USER': 'admin',
-        'PASSWORD': '123',
-        'HOST':'localhost',
-        'PORT':'5432',
-        
-    },
-    
+    }
 }
-# DATABASES['default'] = DATABASES['test']
+#     # 'test': {
+#     #     'ENGINE': 'django.db.backends.postgresql',
+#     #     'NAME': 'movie_test',
+#     #     'USER': 'admin',
+#     #     'PASSWORD': '123',
+#     #     'HOST':'localhost',
+#     #     'PORT':'5432',
+        
+#     # },
+    
+# }
 
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3'
 #     }
 # }
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'http://localhost:9200',
+        'http_auth': ('admin', '123')
+    }
+}
+
+
 
 
 # Password validation

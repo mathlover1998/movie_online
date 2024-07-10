@@ -190,7 +190,7 @@ class Movie(models.Model):
     runtime = models.IntegerField(null=False,default=0)
     movie_url = models.FileField(upload_to='documents/')
     synopsis = models.TextField(null=True,blank=True)
-    mpaa_rating = models.CharField(choices=RATING_TYPE,default='g',null=False)
+    mpaa_rating = models.CharField(choices=RATING_TYPE,default='g',null=False,max_length=5)
     score = models.DecimalField(max_digits=3, decimal_places=1,null=False)
     imdb_score = models.DecimalField(max_digits=3, decimal_places=1, null=False)
 
@@ -212,7 +212,7 @@ class MovieImage(models.Model):
     IMAGE_TYPE = (('poster','Poster'),('backdrop','Backdrop'),('screenshot','Screenshot'))
     movie = models.ForeignKey(Movie, models.CASCADE,related_name='images')
     image_url = models.ImageField(upload_to="images/movie_images/")
-    type = models.CharField(choices=IMAGE_TYPE,default='backdrop',null=False)
+    type = models.CharField(choices=IMAGE_TYPE,default='backdrop',null=False,max_length=15)
 
 
     @property
@@ -231,7 +231,7 @@ class MovieImage(models.Model):
 class Genre(models.Model):
     GENRE_TYPE = ('drama', 'Drama'), ('action', 'Action'), ('adventure', 'Adventure'), ('animation', 'Animation'), ('biography', 'Biography'), ('comedy', 'Comedy'), ('crime', 'Crime'), ('documentary', 'Documentary'), ('drama', 'Drama'), ('family', 'Family'), ('fantasy', 'Fantasy'), ('film_noir', 'Film Noir'), ('history', 'History'), ('horror', 'Horror'), ('music', 'Music'), ('musical', 'Musical'), ('mystery', 'Mystery'), ('romance', 'Romance'), ('sci_fi', 'Sci-Fi'), ('sport', 'Sport'), ('superhero', 'Superhero'), ('thriller', 'Thriller'), ('war', 'War'), ('western', 'Western')
 
-    name = models.CharField(choices=GENRE_TYPE,default='drama',null=False)
+    name = models.CharField(choices=GENRE_TYPE,default='drama',null=False,max_length=20)
 
     class Meta:
         managed = True
@@ -242,7 +242,7 @@ class Cast(models.Model):
     CAST_ROLE = (('actor','Actor'),('director','Director'))
     name = models.CharField(max_length=100)
     dob = models.DateField(blank=True, null=True)
-    role = models.CharField(choices=CAST_ROLE,default='actor',null=False)
+    role = models.CharField(choices=CAST_ROLE,default='actor',null=False,max_length=10)
     ranking = models.IntegerField(blank=True, null=True)
 
     class Meta:

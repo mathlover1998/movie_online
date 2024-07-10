@@ -5,6 +5,19 @@ from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .permissions import IsSuperUserOrReadOnly
+from django.shortcuts import render
+from .documents import MovieDocument
+from elasticsearch_dsl.query import MultiMatch
+
+
+def index(request):
+    q = request.GET.get('q')
+    context = {}
+    if q:
+        query = MultiMatch(query =q, fields = ['title','synopsis'],fuzziness = 'AUTO')
+        movies = MovieDocument.search().query(query)
+        context['movies'] = movies
+    return render(request,'index.html',context)
 
 
 class MovieView(APIView):
@@ -41,3 +54,4 @@ class MovieView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
+
