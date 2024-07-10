@@ -39,13 +39,15 @@ class MovieView(APIView):
             except Movie.DoesNotExist:
                 return Response({'msg':'Movie not found'},status=status.HTTP_404_NOT_FOUND)
         else:
-            movies = Movie.objects.all()
-            title_contains = request.query_params.get('title_contains')
-            if title_contains:
-                movies = movies.filter(title__icontains=title_contains)
+            title = request.query_params.get('q')
             sort_by =request.query_params.get('sort_by','-release_date')
-            movies = movies.order_by(sort_by)
-
+            search = MovieDocument.search()
+            if title:
+                search = search.query("match",title=title)
+            else:
+                search = search.query("match_all")
+            search = search.sort(sort_by)
+            movies = search.to_queryset()
             serializer = MovieSerializer(movies,many=True)
             return Response(serializer.data)
     
@@ -55,3 +57,8 @@ class MovieView(APIView):
         serializer.save()
         return Response(serializer.data,status=status.HTTP_201_CREATED)
 
+
+
+
+class MovieGenreView(APIView):
+    pass

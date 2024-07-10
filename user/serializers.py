@@ -125,3 +125,15 @@ class PhoneNumberSerializer(serializers.Serializer):
 class OTPVerificationSerializer(serializers.Serializer):
     new_phone_number = serializers.CharField(max_length=15)
     otp = serializers.CharField(max_length=6)
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        # fields = '__all__'
+        exclude = ('user',)
+
+    def create(self,validated_data):
+        user = self.context['request'].user
+        address = Address.objects.create(user=user,**validated_data)
+        return address

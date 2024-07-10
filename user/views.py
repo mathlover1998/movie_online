@@ -150,3 +150,36 @@ class OTPVerificationView(APIView):
             return Response({"error": "Invalid new phone number"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class AddressView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request,pk=None):
+        if pk:
+            try:
+                address = Address.objects.get(pk=pk,user=request.user)
+                serializer = AddressSerializer(address)
+                return Response(serializer.data)
+            except Address.DoesNotExist:
+                return Response({'msg':'Not found'},status=status.HTTP_404_NOT_FOUND)
+        else:
+            addresses = Address.objects.filter(user=request.user).order_by('-is_default')
+            serializer = AddressSerializer(addresses,many=True)
+            return Response(serializer.data)
+    def post(self,request):
+        serializer = AddressSerializer(data=request.data,context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+    
+    def put(self,request,pk):
+        address = get_object_or_404(Address,pk=pk,user=request.user)
+        serializer = AddressSerializer(address,data=request.data,partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"msg":"updated successfully"},status=status.HTTP_205_RESET_CONTENT)
+    
+    def delete(self,request,pk):
+        address = get_object_or_404(Address,pk=pk,user= request.user)
+        address.delete()
+        return Response({"msg":"delete successfully"},status=status.HTTP_204_NO_CONTENT)
+        

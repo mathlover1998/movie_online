@@ -164,6 +164,7 @@ class Profile(models.Model):
         verbose_name_plural = "Profiles"
 
 class Address(models.Model):
+    ADDRESS_TYPE = (('home','Home'),('office','Office'),('other','Other'))
     user = models.ForeignKey(User, models.CASCADE,related_name='addresses')
     name = models.CharField(max_length=100,null=False)
     phone_number = PhoneNumberValidators(null=False)
@@ -171,7 +172,21 @@ class Address(models.Model):
     city = models.CharField(max_length=20,null=False)
     district = models.CharField(max_length=20,null=False)
     commune = models.CharField(max_length=30,null=False)
+    type = models.CharField(
+        max_length=50, choices=ADDRESS_TYPE, default="other"
+    )  # Home, Work, Other
+    is_default = models.BooleanField(default=False)
 
+    def save(self, *args, **kwargs):
+        #the first address always has is_default=True
+        if not Address.objects.filter(user=self.user).exists():
+            self.is_default = True
+        else:
+            if self.is_default:
+                Address.objects.filter(user=self.user).exclude(pk=self.pk).update(is_default=False)
+            if not Address.objects.filter(is_default=True).exists():
+                self.is_default=True
+        super().save(*args, **kwargs)
 
     class Meta:
         managed = True
