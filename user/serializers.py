@@ -137,3 +137,21 @@ class AddressSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         address = Address.objects.create(user=user,**validated_data)
         return address
+
+class RatingReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['rating',]
+
+    
+    def create(self, validated_data):
+        user = self.context['request'].user  # Get user from request context
+        movie = self.context['movie']
+        review = Review.objects.create(user=user, movie=movie, **validated_data)
+        return review
+    
+class WatchlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Watchlist
+        fields = ['movie']
+    

@@ -16,4 +16,6 @@ urlpatterns = [
     path('verify-otp/', OTPVerificationView.as_view(), name='verify-otp'),
     path('address/',AddressView.as_view(),name='address_list'),
     path('address/<int:pk>/',AddressView.as_view(),name='address_detail'),
+    path('review/<int:movie_id>/',RatingReviewView.as_view(),name='create_review'),
+    path('watchlist/',WatchlistView.as_view(),name='watchlist')
 ]

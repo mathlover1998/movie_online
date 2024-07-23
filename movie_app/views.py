@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from .serializers import MovieSerializer
+from .serializers import MovieSerializer,GenreSerializer,CastSerializer
 from .models import *
 from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.response import Response
@@ -59,6 +59,34 @@ class MovieView(APIView):
 
 
 
+class GenreView(APIView):
+    permission_classes = [AllowAny]
+    def get(self,request,name=None):
+        if name:
+            try:
+                genre = Genre.objects.get(name=name)
+                serializer = GenreSerializer(genre)
+                return Response(serializer.data)
+            except Genre.DoesNotExist:
+                return Response({"msg":"Not found"},status.HTTP_404_NOT_FOUND)
+        else:
+            genres = Genre.objects.all()
+            serializer = GenreSerializer(genres,many=True)
+            return Response(serializer.data)
+    
+class CastView(APIView):
+    permission_classes = [AllowAny]
+    def get(self,request):
+        name = request.query_params.get('name')
+        if name:
+            try:
+                cast = Cast.objects.get(name= name)
+                serializer = CastSerializer(cast)
+                return Response(serializer.data)
+            except Cast.DoesNotExist:
+                return Response({"mgs":"Not found"},status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"mgs":"error"},status=status.HTTP_404_NOT_FOUND)
 
 class MovieGenreView(APIView):
     pass

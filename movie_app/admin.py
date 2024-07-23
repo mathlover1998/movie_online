@@ -90,4 +90,8 @@ from .models import *
 
 admin.site.register(Movie)
 admin.site.register(MovieImage)
+admin.site.register(Cast)
+admin.site.register(Review)
+admin.site.register(User)
+admin.site.register(Profile)
 # admin.site.register(Movie)

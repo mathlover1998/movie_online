@@ -2,7 +2,7 @@ from rest_framework import status,viewsets,generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
 from .serializers import *
 from django.shortcuts import get_object_or_404
@@ -183,3 +183,38 @@ class AddressView(APIView):
         address.delete()
         return Response({"msg":"delete successfully"},status=status.HTTP_204_NO_CONTENT)
         
+
+class RatingReviewView(APIView):
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        elif self.request.method =='POST':
+            return [IsAuthenticated()]
+        return super().get_permissions()
+    def post(self, request,movie_id):
+        movie = Movie.objects.get(id=movie_id)
+
+        serializer = RatingReviewSerializer(data=request.data, context={'request': request,'movie':movie})
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class WatchlistView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        try:
+            watchlist = Watchlist.objects.get(user=request.user)
+            
+            serializer = WatchlistSerializer(watchlist)
+            return Response(serializer.data)
+        except Watchlist.DoesNotExist:
+            return Response({'msg':'Not found'},status=status.HTTP_404_NOT_FOUND)
+    def post(self,request):
+        serializer = WatchlistSerializer(data=request.data,context={'request':request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({'msg':'add success'},status=status.HTTP_201_CREATED)

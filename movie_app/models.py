@@ -144,7 +144,7 @@ class Profile(models.Model):
     info = models.TextField(blank=True)
     first_name = models.CharField(max_length=255,null=False,default='')
     last_name = models.CharField(max_length=255,null=False,default='')
-    display_name = models.CharField(max_length=255,null=False)
+    display_name = models.CharField(max_length=255,null=False,blank=True)
 
     @property
     def full_name(self):
@@ -214,6 +214,15 @@ class Movie(models.Model):
     
     def generate_unique_endpoint(self):
         return f"{to_kebab_case(self.title)}-{uuid.uuid4()}"
+    
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            total_rating = sum(review.rating for review in reviews)
+            return total_rating / reviews.count()
+        else:
+            return None
+
     def save(self,*args,**kwargs):
         if not self.end_point:
             self.end_point = self.generate_unique_endpoint()
@@ -244,9 +253,7 @@ class MovieImage(models.Model):
         verbose_name_plural = "Movie Images"
 
 class Genre(models.Model):
-    GENRE_TYPE = ('drama', 'Drama'), ('action', 'Action'), ('adventure', 'Adventure'), ('animation', 'Animation'), ('biography', 'Biography'), ('comedy', 'Comedy'), ('crime', 'Crime'), ('documentary', 'Documentary'), ('drama', 'Drama'), ('family', 'Family'), ('fantasy', 'Fantasy'), ('film_noir', 'Film Noir'), ('history', 'History'), ('horror', 'Horror'), ('music', 'Music'), ('musical', 'Musical'), ('mystery', 'Mystery'), ('romance', 'Romance'), ('sci_fi', 'Sci-Fi'), ('sport', 'Sport'), ('superhero', 'Superhero'), ('thriller', 'Thriller'), ('war', 'War'), ('western', 'Western')
-
-    name = models.CharField(choices=GENRE_TYPE,default='drama',null=False,max_length=20)
+    name = models.CharField(unique=True,default='',max_length=20)
 
     class Meta:
         managed = True
@@ -260,6 +267,8 @@ class Cast(models.Model):
     role = models.CharField(choices=CAST_ROLE,default='actor',null=False,max_length=10)
     ranking = models.IntegerField(blank=True, null=True)
 
+    def __str__(self) -> str:
+        return self.name
     class Meta:
         managed = True
         db_table = 'casts'
@@ -283,11 +292,18 @@ class Review(models.Model):
     user = models.ForeignKey(User, models.CASCADE,related_name='reviews')
     movie = models.ForeignKey(Movie, models.CASCADE,related_name='reviews')
     rating = models.DecimalField(max_digits=3, decimal_places=1, blank=True, null=True)
+    total_rating = models.DecimalField(max_digits=3, decimal_places=1, default=0)
     review_text = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
+
     def __str__(self) -> str:
         return self.user.profile.display_name
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        # Update movie average rating when a review is saved
+        self.movie.save()
+
     class Meta:
         managed = True
         db_table = 'reviews'
